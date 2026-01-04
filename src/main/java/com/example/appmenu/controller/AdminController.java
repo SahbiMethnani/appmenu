@@ -1,5 +1,5 @@
 package com.example.appmenu.controller;
-
+import java.util.Comparator;
 import com.example.appmenu.dto.*;
 import com.example.appmenu.entity.*;
 import com.example.appmenu.repository.*;
@@ -51,15 +51,19 @@ public class AdminController {
     }
 
     @GetMapping("/commandes")
-    public List<CommandeDto> getAllCommandes() {
+    public List<CommandeEnrichieDto> getAllCommandes() {
         return commandeRepository.findAll().stream()
                 .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
-                .map(c -> new CommandeDto(c.getId(), c.getTableNum(),
-                        commandeService.jsonToItems(c.getItems()),
-                        c.getStatus(), c.getCreatedAt(), c.getTotal()))
+                .map(c -> new CommandeEnrichieDto(
+                        c.getId(),
+                        c.getTableNum(),
+                        commandeService.jsonToItemsEnrichis(c.getItems()),  // Méthode enrichie
+                        c.getStatus(),
+                        c.getCreatedAt(),
+                        c.getTotal()
+                ))
                 .toList();
     }
-
     @PutMapping("/commande/{id}")
     public Map<String, String> updateCommandeStatus(@PathVariable Long id, @Valid @RequestBody CommandeUpdateRequest request) {
         Commande commande = commandeRepository.findById(id)

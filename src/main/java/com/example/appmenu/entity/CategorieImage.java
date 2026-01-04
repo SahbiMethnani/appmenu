@@ -18,8 +18,7 @@ public class CategorieImage {
     @Column(unique = true, nullable = false)
     private String categorie;
 
-    // ✨ CORRECTION : Spécifier columnDefinition="TEXT" pour PostgreSQL
-    @Lob
+
     @Column(name = "image_base64", columnDefinition = "TEXT")
     private String imageBase64;
 }

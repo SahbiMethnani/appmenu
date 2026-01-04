@@ -1,6 +1,7 @@
 package com.example.appmenu.service;
 
 import com.example.appmenu.dto.ItemCommandeDto;
+import com.example.appmenu.dto.ItemCommandeEnrichiDto;
 import com.example.appmenu.entity.Plat;
 import com.example.appmenu.repository.PlatRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -10,13 +11,14 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 @Service
-@RequiredArgsConstructor  // Lombok génère le constructeur avec PlatRepository
+@RequiredArgsConstructor
 public class CommandeService {
 
     private final PlatRepository platRepository;
-    private final ObjectMapper objectMapper = new ObjectMapper();  // Pour JSON
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * Calcule le total de la commande à partir des items
@@ -33,33 +35,24 @@ public class CommandeService {
 
     /**
      * Convertit une liste d'ItemCommandeDto en String JSON pour stockage en base
-     * Gère l'exception JsonProcessingException en interne
      *
      * @param items la liste des items à convertir
      * @return la représentation JSON
-     * @throws RuntimeException si la sérialisation échoue
+     * @throws JsonProcessingException si la sérialisation échoue
      */
-    public String itemsToJson(List<ItemCommandeDto> items) {
+    public String itemsToJson(List<ItemCommandeDto> items) throws JsonProcessingException {
         if (items == null || items.isEmpty()) {
             return "[]";
         }
-
-        try {
-            return objectMapper.writeValueAsString(items);
-        } catch (JsonProcessingException e) {
-            // Log l'erreur pour le debug
-            System.err.println("Erreur lors de la sérialisation JSON: " + e.getMessage());
-            throw new RuntimeException("Erreur lors de la sérialisation des items de la commande: " + e.getMessage(), e);
-        }
+        return objectMapper.writeValueAsString(items);
     }
 
     /**
      * Convertit le JSON stocké en base en List<ItemCommandeDto>
-     * Gère l'exception JsonProcessingException en interne
+     * Retourne une liste vide en cas d'erreur au lieu de lancer une exception
      *
      * @param json la chaîne JSON à parser
-     * @return la liste des items, ou une liste vide si le JSON est vide
-     * @throws RuntimeException si le parsing échoue
+     * @return la liste des items, ou une liste vide si le JSON est vide ou invalide
      */
     public List<ItemCommandeDto> jsonToItems(String json) {
         if (json == null || json.isBlank() || "[]".equals(json.trim())) {
@@ -71,9 +64,38 @@ public class CommandeService {
                     objectMapper.getTypeFactory()
                             .constructCollectionType(List.class, ItemCommandeDto.class));
         } catch (JsonProcessingException e) {
-            // Log l'erreur pour le debug
             System.err.println("Erreur lors du parsing JSON: " + e.getMessage());
-            throw new RuntimeException("Erreur lors du parsing des items de la commande: " + e.getMessage(), e);
+            System.err.println("JSON problématique: " + json);
+            return Collections.emptyList();
         }
+    }
+
+    /**
+     * Convertit les items JSON et les enrichit avec les informations complètes des plats
+     *
+     * @param json la chaîne JSON à parser
+     * @return la liste des items enrichis avec les infos des plats
+     */
+    public List<ItemCommandeEnrichiDto> jsonToItemsEnrichis(String json) {
+        List<ItemCommandeDto> items = jsonToItems(json);
+
+        return items.stream()
+                .map(item -> {
+                    Plat plat = platRepository.findById(item.platId()).orElse(null);
+                    if (plat == null) {
+                        return null;
+                    }
+                    return new ItemCommandeEnrichiDto(
+                            item.platId(),
+                            item.quantite(),
+                            plat.getNom(),
+                            plat.getDescription(),
+                            plat.getPrix(),
+                            plat.getCategorie(),
+                            plat.getImageUrl()
+                    );
+                })
+                .filter(Objects::nonNull)
+                .toList();
     }
 }

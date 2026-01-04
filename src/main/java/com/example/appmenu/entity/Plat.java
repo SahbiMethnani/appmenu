@@ -22,6 +22,6 @@ public class Plat {
     @Column(nullable = false, length = 100)
     private String categorie;
 
-    @Column(length = 500)
+    @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 }

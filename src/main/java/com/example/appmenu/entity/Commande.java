@@ -10,9 +10,9 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder                  // ← AJOUTÉ : permet d'utiliser Commande.builder()
-@ToString                 // Optionnel, mais utile pour les logs
-@EqualsAndHashCode        // Optionnel, mais recommandé pour les entités
+@Builder
+@ToString
+@EqualsAndHashCode
 public class Commande {
 
     @Id
@@ -23,13 +23,23 @@ public class Commande {
     private int tableNum;
 
     @Column(nullable = false, columnDefinition = "TEXT")
-    private String items; // JSON string
+    private String items;
 
     @Column(nullable = false, length = 50)
-    private String status = "en_attente";
+    private String status;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     private Double total;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+        if (this.status == null) {
+            this.status = "en_attente";
+        }
+    }
 }

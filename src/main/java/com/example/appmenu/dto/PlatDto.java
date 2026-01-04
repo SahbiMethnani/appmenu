@@ -8,5 +8,6 @@ public record PlatDto(
         @Size(max = 1000) String description,
         @Positive @Max(10000) double prix,
         @NotBlank @Size(max = 100) String categorie,
-        @Size(max = 500) String imageUrl
+        //@Size(max = 500)
+        String imageUrl
 ) {}

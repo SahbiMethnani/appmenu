@@ -10,7 +10,7 @@ import lombok.*;
 @AllArgsConstructor
 public class RestaurantConfig {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     @Builder.Default

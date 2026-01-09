@@ -47,7 +47,9 @@ public class PublicController {
 
     @PostMapping("/commande")
     public ResponseEntity<Map<String, Object>> createCommande(@Valid @RequestBody CommandeCreateDto dto) {
-        RestaurantConfig config = configRepository.findById(1L)
+        // Get the first configuration or use default
+        RestaurantConfig config = configRepository.findAll().stream()
+                .findFirst()
                 .orElse(new RestaurantConfig(null, 10));
 
         if (dto.tableNum() > config.getNombreTables()) {
@@ -121,7 +123,8 @@ public class PublicController {
 
     @GetMapping("/config/tables")
     public Map<String, Integer> getTableConfig() {
-        int tables = configRepository.findById(1L)
+        int tables = configRepository.findAll().stream()
+                .findFirst()
                 .map(RestaurantConfig::getNombreTables)
                 .orElse(10);
         return Map.of("nombre_tables", tables);

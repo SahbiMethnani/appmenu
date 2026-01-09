@@ -1,79 +1,124 @@
 package com.example.appmenu.service;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import java.util.Date;
 
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+
+@Slf4j
 @Service
 public class JwtService {
 
     @Value("${app.jwt.secret}")
-    private String secret;
+    private String jwtSecret;
 
-    @Value("${app.jwt.expiration-hours}")
-    private long expirationHours;
+    @Value("${app.jwt.expiration-hours:24}")
+    private int expirationHours;
 
     /**
-     * Génère un token JWT pour un utilisateur admin
+     * Génère un token JWT pour l'utilisateur
      */
     public String generateToken(String username) {
-        return Jwts.builder()
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", "ADMIN");
+
+        long expirationMs = expirationHours * 3600 * 1000L;
+
+        String token = Jwts.builder()
+                .claims(claims)
                 .subject(username)
-                .claim("role", "admin")
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expirationHours * 3600000))
-                .signWith(Keys.hmacShaKeyFor(secret.getBytes()))
+                .expiration(new Date(System.currentTimeMillis() + expirationMs))
+                .signWith(getSigningKey())
                 .compact();
+
+        log.debug("🔑 Token JWT généré pour l'utilisateur: {}", username);
+        return token;
     }
 
     /**
-     * Extrait les claims (données) du token JWT
-     */
-    public Claims extractClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(Keys.hmacShaKeyFor(secret.getBytes()))
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-    }
-
-    /**
-     * Extrait le username (subject) du token
+     * Extrait le username du token
      */
     public String extractUsername(String token) {
+        return extractClaim(token, Claims::getSubject);
+    }
+
+    /**
+     * Extrait la date d'expiration du token
+     */
+    public Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
+
+    /**
+     * Extrait un claim spécifique du token
+     */
+    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+        final Claims claims = extractAllClaims(token);
+        return claimsResolver.apply(claims);
+    }
+
+    /**
+     * Extrait tous les claims du token
+     */
+    private Claims extractAllClaims(String token) {
         try {
-            return extractClaims(token).getSubject();
+            return Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
         } catch (Exception e) {
-            return null;
+            log.error("❌ Erreur lors de l'extraction des claims: {}", e.getMessage());
+            throw e;
         }
     }
 
     /**
-     * Vérifie si le token est valide pour un utilisateur donné
+     * Vérifie si le token est expiré
      */
-    public boolean isTokenValid(String token, String username) {
+    private Boolean isTokenExpired(String token) {
         try {
-            Claims claims = extractClaims(token);
-            return claims.getSubject().equals(username) &&
-                    claims.get("role").equals("admin") &&
-                    !claims.getExpiration().before(new Date());
+            return extractExpiration(token).before(new Date());
         } catch (Exception e) {
+            log.error("❌ Erreur lors de la vérification de l'expiration: {}", e.getMessage());
+            return true;
+        }
+    }
+
+    /**
+     * Valide le token JWT
+     */
+    public Boolean isTokenValid(String token) {
+        try {
+            return !isTokenExpired(token);
+        } catch (Exception e) {
+            log.error("❌ Token invalide: {}", e.getMessage());
             return false;
         }
     }
 
     /**
-     * Vérifie si le token est valide (sans vérifier le username)
+     * Alternative : validateToken (même fonctionnalité)
      */
-    public boolean isTokenValid(String token) {
-        try {
-            Claims claims = extractClaims(token);
-            return claims.get("role").equals("admin") &&
-                    !claims.getExpiration().before(new Date());
-        } catch (Exception e) {
-            return false;
-        }
+    public Boolean validateToken(String token) {
+        return isTokenValid(token);
+    }
+
+    /**
+     * Génère la clé de signature à partir du secret
+     */
+    private SecretKey getSigningKey() {
+        byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 }

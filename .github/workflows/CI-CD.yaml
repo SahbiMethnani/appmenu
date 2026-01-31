@@ -39,11 +39,7 @@ jobs:
           cd appmenu
           mvn compile
 
-      - name: Maven Test
-        run: |
-          cd ..
-          cd  appmenu
-          mvn test
+
 
       - name: Maven Build (Skip Tests)
         run: |

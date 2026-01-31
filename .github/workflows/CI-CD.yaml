@@ -45,7 +45,7 @@ jobs:
         run: |
           cd ..
           cd  appmenu
-          mvn install -DskipTests=true
+          mvn install -Dmaven.test.skip=true
 
       - name: Build Backend Docker Image
         run: |

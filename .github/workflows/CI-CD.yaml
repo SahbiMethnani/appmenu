@@ -29,22 +29,22 @@ jobs:
 
       - name: Maven Clean
         run: |
-          cd  projet-fed-back
+          cd  appmenu
           mvn clean
 
       - name: Maven Compile
         run: |
-          cd projet-fed-back
+          cd appmenu
           mvn compile
 
       - name: Maven Test
         run: |
-          cd  projet-fed-back
+          cd  appmenu
           mvn test
 
       - name: Maven Build (Skip Tests)
         run: |
-          cd  projet-fed-back
+          cd  appmenu
           mvn install -DskipTests=true
 
       - name: Build Backend Docker Image

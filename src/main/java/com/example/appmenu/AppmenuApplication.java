@@ -19,13 +19,10 @@ import java.util.TimeZone;
 public class AppmenuApplication {
 
 	public static void main(String[] args) {
-		// ✅ Configure le fuseau horaire par défaut
 		TimeZone.setDefault(TimeZone.getTimeZone("Africa/Tunis")); // ou "UTC"
 
-		// ✅ Lance l'application
 		ConfigurableApplicationContext context = SpringApplication.run(AppmenuApplication.class, args);
 
-		// ✅ Affiche les informations de démarrage
 		logApplicationStartup(context.getEnvironment());
 	}
 

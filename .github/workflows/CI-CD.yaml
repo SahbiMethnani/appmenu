@@ -29,21 +29,25 @@ jobs:
 
       - name: Maven Clean
         run: |
+          cd ..
           cd  appmenu
           mvn clean
 
       - name: Maven Compile
         run: |
+          cd ..
           cd appmenu
           mvn compile
 
       - name: Maven Test
         run: |
+          cd ..
           cd  appmenu
           mvn test
 
       - name: Maven Build (Skip Tests)
         run: |
+          cd ..
           cd  appmenu
           mvn install -DskipTests=true
 

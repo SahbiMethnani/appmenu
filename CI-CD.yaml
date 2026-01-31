@@ -29,17 +29,17 @@ jobs:
 
       - name: Maven Clean
         run: |
-          cd  back
+          cd  projet-fed-back
           mvn clean
 
       - name: Maven Compile
         run: |
-          cd back
+          cd projet-fed-back
           mvn compile
 
       - name: Maven Test
         run: |
-          cd  back
+          cd  projet-fed-back
           mvn test
 
       - name: Maven Build (Skip Tests)

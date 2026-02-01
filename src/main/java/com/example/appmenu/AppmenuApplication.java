@@ -26,9 +26,7 @@ public class AppmenuApplication {
 		logApplicationStartup(context.getEnvironment());
 	}
 
-	/**
-	 * Affiche les informations de démarrage de l'application
-	 */
+
 	private static void logApplicationStartup(Environment env) {
 		String protocol = "http";
 		if (env.getProperty("server.ssl.key-store") != null) {

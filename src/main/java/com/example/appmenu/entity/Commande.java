@@ -27,6 +27,7 @@ public class Commande {
 
     @Column(nullable = false, length = 50)
     private String status;
+    private String clientId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

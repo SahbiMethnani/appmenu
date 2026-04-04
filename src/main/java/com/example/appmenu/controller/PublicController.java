@@ -1,4 +1,4 @@
-package com.example.appmenu.controller;  //
+package com.example.appmenu.controller;
 
 import com.example.appmenu.dto.*;
 import com.example.appmenu.entity.Commande;
@@ -45,16 +45,30 @@ public class PublicController {
                 .toList();
     }
 
+    @GetMapping("/commandes/client/{clientId}")
+    public List<CommandeEnrichieDto> getCommandesByClient(@PathVariable String clientId) {
+        return commandeRepository.findAllByClientId(clientId)
+            .stream()
+            .map(c -> new CommandeEnrichieDto(
+                c.getId(),
+                c.getTableNum(),
+                commandeService.jsonToItemsEnrichis(c.getItems()),
+                c.getStatus(),
+                c.getCreatedAt(),
+                c.getTotal()
+            ))
+            .toList();
+    }
+
     @PostMapping("/commande")
-    public ResponseEntity<Map<String, Object>> createCommande(@Valid @RequestBody CommandeCreateDto dto) {
+    public ResponseEntity<CommandeEnrichieDto> createCommande(@Valid @RequestBody CommandeCreateDto dto) {
         // Get the first configuration or use default
         RestaurantConfig config = configRepository.findAll().stream()
                 .findFirst()
                 .orElse(new RestaurantConfig(null, 10));
 
         if (dto.tableNum() > config.getNombreTables()) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("detail", "Numéro de table invalide (max: " + config.getNombreTables() + ")"));
+            return ResponseEntity.badRequest().build();
         }
 
         double total = commandeService.calculateTotal(dto.items());
@@ -63,8 +77,7 @@ public class PublicController {
         try {
             itemsJson = commandeService.itemsToJson(dto.items());
         } catch (Exception e) {  // JsonProcessingException est une Exception
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("detail", "Erreur lors de la sérialisation des items"));
+            return ResponseEntity.internalServerError().build();
         }
 
         Commande commande = Commande.builder()
@@ -76,31 +89,35 @@ public class PublicController {
 
         commande = commandeRepository.save(commande);
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Commande créée avec succès");
-        response.put("commande_id", commande.getId());
-        response.put("status", "en_attente");
-        response.put("total", commande.getTotal());
+        // Build enriched DTO to return immediately
+        CommandeEnrichieDto dtoResp = new CommandeEnrichieDto(
+                commande.getId(),
+                commande.getTableNum(),
+                commandeService.jsonToItemsEnrichis(commande.getItems()),
+                commande.getStatus(),
+                commande.getCreatedAt(),
+                commande.getTotal()
+        );
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(dtoResp);
     }
 
     @GetMapping("/commande/{tableNum}")
-    public CommandeDto getCommandeByTable(@PathVariable int tableNum) {
+    public CommandeEnrichieDto getCommandeByTable(@PathVariable int tableNum) {
         return commandeRepository.findTopByTableNumOrderByCreatedAtDesc(tableNum)
                 .map(c -> {
                     try {
-                        return new CommandeDto(
+                        return new CommandeEnrichieDto(
                                 c.getId(),
                                 c.getTableNum(),
-                                commandeService.jsonToItems(c.getItems()),
+                                commandeService.jsonToItemsEnrichis(c.getItems()),
                                 c.getStatus(),
                                 c.getCreatedAt(),
                                 c.getTotal()
                         );
                     } catch (Exception e) {
                         // En cas d'erreur de désérialisation, on retourne une liste vide
-                        return new CommandeDto(
+                        return new CommandeEnrichieDto(
                                 c.getId(),
                                 c.getTableNum(),
                                 List.of(),
@@ -112,6 +129,20 @@ public class PublicController {
                 })
                 .orElse(null);
     }
+
+        @GetMapping("/commande/id/{id}")
+        public CommandeEnrichieDto getCommandeById(@PathVariable Long id) {
+            return commandeRepository.findById(id)
+                .map(c -> new CommandeEnrichieDto(
+                    c.getId(),
+                    c.getTableNum(),
+                    commandeService.jsonToItemsEnrichis(c.getItems()),
+                    c.getStatus(),
+                    c.getCreatedAt(),
+                    c.getTotal()
+                ))
+                .orElse(null);
+        }
 
     @GetMapping("/categories/images")
     public Map<String, String> getCategoriesImages() {

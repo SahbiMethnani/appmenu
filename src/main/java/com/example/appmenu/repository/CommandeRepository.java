@@ -56,6 +56,8 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
     @Query("SELECT c FROM Commande c ORDER BY c.createdAt DESC")
     List<Commande> findTopNRecent(Pageable pageable);
 
+    List<Commande> findAllByClientId(String clientId);
+
     @Query("SELECT c FROM Commande c WHERE c.status = 'en_attente' ORDER BY c.createdAt ASC")
     List<Commande> findCommandesEnAttente();
 

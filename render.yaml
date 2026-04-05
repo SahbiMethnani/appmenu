@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: appmenu-backend
+    env: docker
+    dockerfilePath: Dockerfile
+    plan: free
+    autoDeploy: true
+    envVars:
+      # Render fournit automatiquement PORT
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: DATABASE_URL
+        value: ""
+      - key: DB_USERNAME
+        value: ""
+      - key: DB_PASSWORD
+        value: ""
+      - key: APP_ADMIN_USERNAME
+        value: ""
+      - key: APP_ADMIN_PASSWORD_HASH
+        value: ""
+      - key: APP_JWT_SECRET
+        value: ""
+      - key: JAVA_OPTS
+        value: "-Xms256m -Xmx512m"
